@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0c1524" />
+  <title>TRACE — Ticket T-1047</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- Header: compact TRACE branding -->
+    <header class="app-header">
+      <button class="icon-btn" type="button" aria-label="Open menu" data-action="menu">
+        <span data-icon="menu"></span>
+      </button>
+      <div class="brand">
+        <span class="brand-name">TRACE</span>
+        <span class="brand-sub">Technical Support Training</span>
+      </div>
+      <button class="avatar" type="button" aria-label="Account">
+        <span data-icon="circle-user"></span>
+      </button>
+    </header>
+
+    <!-- Context bar -->
+    <div class="subbar">
+      <button class="back-btn" type="button" data-action="back">
+        <span data-icon="chevron-left"></span>
+        <span>Back to Tickets</span>
+      </button>
+      <span class="subbar-id" data-slot="subbar-ticket-id">T-1047</span>
+    </div>
+
+    <!-- Scrollable ticket page (single continuous page, no tabs) -->
+    <main class="page" id="page">
+      <article class="ticket-card" id="ticket-root" aria-busy="true">
+        <noscript><p class="muted">Enable JavaScript to load the ticket.</p></noscript>
+      </article>
+    </main>
+
+    <!-- Fixed bottom action area -->
+    <div class="bottom-bar">
+      <div class="note-row">
+        <input class="note-input" id="note-input" type="text"
+               placeholder="Add a note…" aria-label="Add a note" autocomplete="off" />
+        <button class="icon-btn note-attach" type="button" aria-label="Attach file" data-action="attach">
+          <span data-icon="paperclip"></span>
+        </button>
+      </div>
+      <button class="start-btn" id="start-investigation" type="button">
+        <span data-icon="play"></span>
+        <span>Start Investigation</span>
+      </button>
+    </div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

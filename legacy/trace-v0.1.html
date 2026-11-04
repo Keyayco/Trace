@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>TRACE — Technical Support Simulation Lab</title>
+<style>
+:root{
+  --bg0:#080b10; --bg1:#0c1118; --panel:#10161f; --panel2:#151d29; --panel3:#1a2432;
+  --border:#202c3d; --border2:#2b3a50;
+  --text:#d7e1ec; --muted:#7f8ea1; --faint:#5a6879;
+  --cyan:#3fd6c0; --cyan-dim:#1f6e63;
+  --amber:#e2a84c; --red:#e06159; --green:#4ecb8d;
+  --mono:ui-monospace,"SF Mono","Cascadia Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  --sans:"Inter","Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{ -webkit-text-size-adjust:100% }
+body{
+  background:var(--bg0); color:var(--text); font-family:var(--sans);
+  font-size:15px; line-height:1.5; min-height:100vh;
+  display:flex; flex-direction:column;
+}
+button{font-family:inherit;cursor:pointer}
+/* ---------- Top bar ---------- */
+.topbar{
+  position:sticky;top:0;z-index:40;
+  background:rgba(10,14,20,.96);border-bottom:1px solid var(--border);
+  padding:10px 14px;display:flex;align-items:center;gap:10px;
+}
+.logo{display:flex;align-items:center;gap:9px;min-width:0}
+.logo-mark{
+  width:26px;height:26px;flex:0 0 auto;border:2px solid var(--cyan);
+  display:grid;place-items:center;font-family:var(--mono);font-weight:700;
+  color:var(--cyan);font-size:13px;border-radius:5px;
+}
+.logo-name{font-weight:800;letter-spacing:.22em;font-size:15px}
+.logo-desc{font-size:10px;color:var(--muted);letter-spacing:.08em;display:none}
+.topbar-meta{margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.chip{
+  font-family:var(--mono);font-size:11px;padding:4px 8px;border-radius:4px;
+  border:1px solid var(--border2);color:var(--muted);white-space:nowrap;background:var(--panel);
+}
+.chip b{color:var(--text);font-weight:600}
+.chip.stage b{color:var(--cyan)}
+.chip.warn{border-color:#4a3a1d;color:var(--amber)}
+.chip.ok{border-color:#1d4034;color:var(--green)}
+.chip.cyan{border-color:var(--cyan-dim);color:var(--cyan)}
+/* ---------- Layout ---------- */
+#screen{flex:1;width:100%;max-width:1120px;margin:0 auto;padding:16px 14px 96px}
+.stage-eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.18em;color:var(--faint);text-transform:uppercase;margin-bottom:6px}
+.stage-title{font-size:21px;font-weight:700;margin-bottom:14px;letter-spacing:-.01em}
+.panel{
+  background:var(--panel);border:1px solid var(--border);border-radius:10px;
+  margin-bottom:12px;overflow:hidden;
+}
+.panel-head{
+  padding:10px 14px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;
+  font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+}
+.panel-body{padding:14px}
+.grid2{display:grid;gap:12px}
+@media(min-width:720px){.grid2{grid-template-columns:1fr 1fr}}
+.kv{display:grid;grid-template-columns:130px 1fr;gap:4px 10px;font-size:13.5px}
+.kv dt{color:var(--muted);font-family:var(--mono);font-size:11.5px;padding-top:2px}
+.kv dd{color:var(--text)}
+.quote{
+  border-left:3px solid var(--border2);padding:10px 12px;margin:8px 0;
+  background:var(--panel2);border-radius:0 8px 8px 0;font-size:14px;color:#c3cfdd;
+}
+ul.evidence{list-style:none}
+ul.evidence li{padding:7px 0 7px 22px;position:relative;border-bottom:1px dashed var(--border);font-size:13.5px;color:#b9c6d4}
+ul.evidence li:last-child{border-bottom:none}
+ul.evidence li::before{content:"";position:absolute;left:4px;top:14px;width:7px;height:7px;border-radius:2px;background:var(--faint)}
+ul.evidence li.amb::before{background:var(--amber)}
+.pill{display:inline-block;font-family:var(--mono);font-size:10.5px;padding:2px 8px;border-radius:99px;border:1px solid;letter-spacing:.06em;vertical-align:1px}
+.pill.red{color:var(--red);border-color:#572b27;background:#221313}
+.pill.amber{color:var(--amber);border-color:#4a3a1d;background:#1f1a10}
+.pill.green{color:var(--green);border-color:#1d4034;background:#101f19}
+.pill.cyan{color:var(--cyan);border-color:var(--cyan-dim);background:#0e1f1d}
+.pill.grey{color:var(--muted);border-color:var(--border2);background:var(--panel2)}
+/* ---------- Buttons ---------- */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px 18px;border-radius:8px;font-size:14px;font-weight:600;
+  border:1px solid var(--border2);background:var(--panel3);color:var(--text);
+  transition:background .12s,border-color .12s;min-height:44px;
+}
+.btn:hover{background:#1e2a3a;border-color:#35465e}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--cyan);border-color:var(--cyan);color:#06231f;font-weight:700}
+.btn.primary:hover{background:#5ee2ce}
+.btn.danger{background:#2a1414;border-color:#5a2b27;color:#f0a49e}
+.btn.small{padding:7px 12px;font-size:12.5px;min-height:36px;font-family:var(--mono);letter-spacing:.02em}
+.btn.block{width:100%}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+/* ---------- Nav ---------- */
+.nav{
+  position:fixed;left:0;right:0;bottom:0;z-index:50;
+  background:rgba(9,13,19,.97);border-top:1px solid var(--border);
+  display:flex;padding:6px 4px calc(6px + env(safe-area-inset-bottom));
+}
+.nav button{
+  flex:1;background:none;border:none;color:var(--faint);
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:7px 2px;font-size:10px;font-family:var(--mono);letter-spacing:.06em;border-radius:8px;
+  min-height:52px;justify-content:center;
+}
+.nav button svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7}
+.nav button.active{color:var(--cyan);background:#0e1f1d}
+.nav button.locked{opacity:.38;cursor:not-allowed}
+.nav button.done{color:var(--green)}
+@media(min-width:960px){
+  .logo-desc{display:block}
+  .nav{top:57px;bottom:0;left:0;right:auto;width:172px;flex-direction:column;border-top:none;border-right:1px solid var(--border);padding:18px 10px;gap:6px}
+  .nav button{flex-direction:row;justify-content:flex-start;gap:11px;padding:11px 13px;font-size:12px}
+  #screen{padding:26px 30px 40px 202px;max-width:none}
+  .topbar{padding:12px 22px}
+}
+/* ---------- Terminal ---------- */
+.term{
+  background:#070a0f;border:1px solid var(--border);border-radius:8px;
+  font-family:var(--mono);font-size:12px;line-height:1.75;color:#a9c3b6;
+  padding:12px 13px;overflow-x:auto;white-space:pre-wrap;word-break:break-word;
+}
+.term .p{color:var(--cyan)}
+.term .err{color:var(--red)}
+.term .dim{color:var(--faint)}
+.term .amb{color:var(--amber)}
+.term .ok{color:var(--green)}
+.cmdbar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+/* ---------- Workstation ---------- */
+.ws-top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.ws-name{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--text)}
+.tool-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.tool-tabs .btn.small.on{background:#0e1f1d;border-color:var(--cyan-dim);color:var(--cyan)}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(min-width:720px){.stat-grid{grid-template-columns:repeat(3,1fr)}}
+.stat{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.stat .k{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--faint);text-transform:uppercase}
+.stat .v{font-size:13px;margin-top:3px;color:var(--text);font-family:var(--mono);word-break:break-word}
+.stat .v.bad{color:var(--amber)} .stat .v.err{color:var(--red)} .stat .v.good{color:var(--green)}
+/* ---------- History ---------- */
+.hist-item{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;align-items:flex-start}
+.hist-item:last-child{border-bottom:none}
+.hist-t{font-family:var(--mono);font-size:11px;color:var(--faint);flex:0 0 58px;padding-top:2px}
+.dot{flex:0 0 auto;width:8px;height:8px;border-radius:2px;margin-top:6px}
+.dot.info{background:var(--muted)} .dot.success{background:var(--green)}
+.dot.warn{background:var(--amber)} .dot.error{background:var(--red)}
+.dot.perm{background:#b06ae0} .dot.note{background:var(--cyan)}
+.empty{padding:28px 16px;text-align:center;color:var(--faint);font-size:13px;font-family:var(--mono)}
+/* ---------- Review ---------- */
+.result-hero{padding:18px;border-radius:10px;border:1px solid var(--border);margin-bottom:12px}
+.result-hero.resolved{background:#0d1f17;border-color:#1d4034}
+.result-hero.unresolved{background:#241314;border-color:#572b27}
+.result-hero.incomplete{background:#211b0f;border-color:#4a3a1d}
+.result-hero .big{font-size:24px;font-weight:800;letter-spacing:.02em}
+.result-hero.resolved .big{color:var(--green)}
+.result-hero.unresolved .big{color:var(--red)}
+.result-hero.incomplete .big{color:var(--amber)}
+.cat{margin-bottom:10px}
+.cat-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:13.5px}
+.cat-row .pts{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.bar{height:5px;background:var(--panel3);border-radius:99px;margin-top:5px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:99px}
+.cat .expl{font-size:12.5px;color:var(--muted);margin-top:5px}
+.tagrow{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 0}
+.banner{border-radius:8px;padding:11px 13px;font-size:13px;margin-bottom:12px;border:1px solid}
+.banner.train{background:#0e1f1d;border-color:var(--cyan-dim);color:#9adfd4}
+.banner.warnb{background:#211b0f;border-color:#4a3a1d;color:#e6c98a}
+.banner.errb{background:#241314;border-color:#572b27;color:#f0a49e}
+select,input[type=text]{
+  background:var(--panel3);border:1px solid var(--border2);color:var(--text);
+  padding:10px 12px;border-radius:8px;font-size:14px;font-family:inherit;width:100%;min-height:44px;
+}
+.loading-line{font-family:var(--mono);font-size:12px;color:var(--cyan);padding:4px 0}
+.loading-line::after{content:"▌";animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.muted{color:var(--muted)} .small{font-size:12.5px}
+hr.sep{border:none;border-top:1px solid var(--border);margin:14px 0}
+.footer-note{margin-top:20px;text-align:center;font-family:var(--mono);font-size:10.5px;color:var(--faint);letter-spacing:.06em}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="logo">
+    <div class="logo-mark">›_</div>
+    <div>
+      <div class="logo-name">TRACE</div>
+      <div class="logo-desc">TECHNICAL SUPPORT SIMULATION LAB</div>
+    </div>
+  </div>
+  <div class="topbar-meta" id="topMeta"></div>
+</header>
+
+<main id="screen"></main>
+
+<nav class="nav" id="nav"></nav>
+
+<script>
+/* =====================================================================
+   TRACE — deterministic training scenario (all data fictional, client-side)
+   Root cause: workstation NIC manually configured with an off-subnet
+   static IP (10.0.0.50/24, gateway 10.0.0.1) on the 192.168.1.0/24
+   site network. Everything off-subnet is unreachable; DNS and SIP
+   registration fail. Correction: restore DHCP via simulated elevation.
+   ===================================================================== */
+const TICKET = {
+  id:"INC-1042", title:"Reception VoIP phone cannot connect",
+  priority:"P2 — High", status:"Open", created:"09:12 · 19 Oct 2026",
+  service:"Business VoIP", customer:"Northstar Business Services",
+  site:"Manchester Office — Reception",
+  device:"Reception workstation and IP phone", user:"Reception Support",
+  report:"The reception phone has stopped registering. The receptionist says the computer is also showing intermittent connectivity issues. Restarting the phone did not resolve the problem.",
+  impact:"Incoming reception calls may be missed.",
+  evidence:[
+    "The workstation is powered on.",
+    "The IP phone is powered on.",
+    "Restarting the phone did not help.",
+    {t:"The underlying cause has not been confirmed.", amb:true}
+  ]
+};
+const COMM = "Hi Support, the reception phone has stopped registering and the PC has been unreliable this morning. We have restarted the handset, but the problem remains. Please investigate.";
+
+const NAV = [
+  {id:0,label:"Ticket",icon:'<path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12h7M9 16h7"/>'},
+  {id:1,label:"Connect",icon:'<circle cx="12" cy="12" r="3.2"/><path d="M4.5 12a7.5 7.5 0 0 1 15 0"/><path d="M7.5 12a4.5 4.5 0 0 1 9 0"/><path d="M12 15.5V21"/>'},
+  {id:2,label:"Workstation",icon:'<rect x="3" y="4.5" width="18" height="12" rx="1.5"/><path d="M8.5 20h7M12 16.5V20"/>'},
+  {id:3,label:"Review",icon:'<path d="M4 19V9M9.5 19V5M15 19v-8M20.5 19V7"/>'}
+];
+
+let S = freshState();
+function freshState(){
+  return {
+    stage:0, viewTicket:false, viewComm:false,
+    connected:false, connecting:false, sessionEnded:false, elevated:false,
+    fixed:false, fixAttempted:false, tool:"overview",
+    toolsRun:new Set(), postFix:new Set(), voipChecks:0, softphoneRestarts:0,
+    finding:null, denied:0, actions:[], clock:9*3600+41*60+5, finished:false,
+    connectLog:[]
+  };
+}
+function stamp(){
+  S.clock += 5 + Math.floor(Math.random()*8);
+  const h=String(Math.floor(S.clock/3600)).padStart(2,"0"),
+        m=String(Math.floor(S.clock%3600/60)).padStart(2,"0"),
+        s=String(S.clock%60).padStart(2,"0");
+  return h+":"+m+":"+s;
+}
+function log(label,kind,cls){
+  S.actions.push({t:stamp(),label,kind:kind||"info",cls:cls||"helpful"});
+}
+/* ---------- helpers ---------- */
+const esc = s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;");
+function pill(txt,tone){return '<span class="pill '+tone+'">'+txt+'</span>'}
+function netBad(){return !S.fixed}
+/* ---------- shell ---------- */
+function render(){
+  document.getElementById("topMeta").innerHTML =
+    pill("Learner access: <b>Standard User</b>","grey").replace("Standard User","<b style='color:var(--text)'>Standard User</b>")+
+    '<span class="chip stage">Stage <b>'+Math.max(1,Math.min(4,S.stage+1))+'</b> / 4</span>';
+  const nav=document.getElementById("nav");
+  nav.innerHTML = NAV.map(n=>{
+    const locked = (n.id===1&&S.stage<1)||(n.id===2&&!S.connected)||(n.id===3&&!S.finished&&S.actions.length<1&&!S.finished);
+    const locked3 = n.id===3 && !S.finished;
+    const l = n.id===1?S.stage<1 : n.id===2?!S.connected : n.id===3?locked3 : false;
+    const cls = (S.stage===n.id&&!l)?"active":(l?"locked":"done");
+    return '<button class="'+cls+'" onclick="go('+n.id+','+(l?1:0)+')"><svg viewBox="0 0 24 24">'+n.icon+'</svg><span>'+n.label+'</span></button>';
+  }).join("");
+  [renderTicket,renderConnect,renderWorkstation,renderReview][S.stage]();
+  window.scrollTo(0,0);
+}
+function go(n,locked){
+  if(locked){ flashNav(n); return; }
+  S.stage=n;
+  if(n===0&&!S.viewTicket){S.viewTicket=true; log("Reviewed incident ticket INC-1042","note");}
+  render();
+}
+function flashNav(n){
+  log("Attempted to open "+NAV[n].label+" before it was available","warn","unnecessary");
+  render();
+}
+/* =====================================================================
+   SCREEN 1 — TICKET DESK
+   ===================================================================== */
+function renderTicket(){
+  const el=document.getElementById("screen");
+  el.innerHTML = `
+  <div class="stage-eyebrow">Stage 1 of 4 · Incident intake</div>
+  <div class="stage-title">Ticket Desk</div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <span>${TICKET.id}</span>
+      ${pill(TICKET.priority,"red")} ${pill(TICKET.status,"amber")}
+      <span style="margin-left:auto" class="small muted">Created ${TICKET.created}</span>
+    </div>
+    <div class="panel-body">
+      <div style="font-size:17px;font-weight:700;margin-bottom:10px">${TICKET.title}</div>
+      <dl class="kv">
+        <dt>Customer</dt><dd>${TICKET.customer}</dd>
+        <dt>Site</dt><dd>${TICKET.site}</dd>
+        <dt>Service</dt><dd>${TICKET.service}</dd>
+        <dt>Device</dt><dd>${TICKET.device}</dd>
+        <dt>Affected user</dt><dd>${TICKET.user}</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <div class="panel-head">Customer report</div>
+      <div class="panel-body"><div class="quote">“${TICKET.report}”</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">Business impact</div>
+      <div class="panel-body"><div class="quote" style="border-color:#4a3a1d">${TICKET.impact}</div>
+      <div class="small muted" style="margin-top:8px">Learner access level: Standard User · Stages remaining: 3</div></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">Initial evidence</div>
+    <div class="panel-body">
+      <ul class="evidence">
+        ${TICKET.evidence.map(e=> typeof e==="string"
+          ? "<li>"+e+"</li>"
+          : '<li class="amb">'+e.t+" "+pill("unconfirmed","amber")+"</li>").join("")}
+      </ul>
+    </div>
+  </div>
+
+  <div class="banner train">TRAINING SIMULATION — All customer, site, and device data is fictional. No real systems are accessed.</div>
+
+  <button class="btn primary block" onclick="beginInvestigation()">Begin Investigation →</button>
+  <div class="footer-note">TRACE v0.1 · scenario NS-VOIP-01 · deterministic mock data</div>`;
+}
+function beginInvestigation(){
+  if(S.stage===0) log("Began investigation — moved to remote support stage","success");
+  S.stage=1; render();
+}
+/* =====================================================================
+   SCREEN 2 — REMOTE SUPPORT
+   ===================================================================== */
+function renderConnect(){
+  const el=document.getElementById("screen");
+  let body="";
+  if(S.connected && !S.sessionEnded){
+    body = `
+    <div class="panel">
+      <div class="panel-head">Session information ${pill("Connected","green")}</div>
+      <div class="panel-body">
+        <dl class="kv">
+          <dt>Session ID</dt><dd style="font-family:var(--mono)">SIM-${S.sid}</dd>
+          <dt>Target device</dt><dd style="font-family:var(--mono)">MCR-REC-WS01 (Reception Support)</dd>
+          <dt>Permitted access</dt><dd>Standard User — read-only diagnostics · <span class="small muted">no administrative actions without simulated elevation</span></dd>
+          <dt>Environment</dt><dd>Browser-simulated · isolated from any real machine or network</dd>
+        </dl>
+        <div class="btn-row">
+          <button class="btn primary" onclick="enterWorkstation()">Enter Workstation Environment →</button>
+          <button class="btn danger" onclick="endSession()">End Session</button>
+        </div>
+      </div>
+    </div>`;
+  } else if(S.sessionEnded){
+    body = `
+    <div class="panel"><div class="panel-body">
+      <div style="margin-bottom:10px">${pill("Session Ended","grey")}</div>
+      <p class="small muted">The simulated support session has ended. You can start a new training session to continue the exercise.</p>
+      <div class="btn-row"><button class="btn" onclick="connectSession()">Reconnect to Simulated Session</button></div>
+    </div></div>`;
+  } else {
+    body = `
+    <div class="panel">
+      <div class="panel-head">Support-session request ${pill("Not Connected","grey")}</div>
+      <div class="panel-body">
+        <dl class="kv">
+          <dt>Requester</dt><dd>Reception Support · Northstar Business Services</dd>
+          <dt>Channel</dt><dd>Voicemail transcript · 09:31</dd>
+        </dl>
+        <div class="quote">“${COMM}”</div>
+        ${S.viewComm?"":'<button class="btn small" onclick="markComm()">Mark communication as reviewed</button>'}
+      </div>
+    </div>
+    <div class="banner train">TRAINING-ONLY — Connection is simulated entirely inside this browser. No real customer machine, SSH, RDP, or remote access is involved.</div>
+    <div class="panel">
+      <div class="panel-head">Access details (simulated)</div>
+      <div class="panel-body">
+        ${S.connecting
+          ? '<div class="term"><span class="p">trace&gt;</span> negotiate session key ... OK<br><span class="p">trace&gt;</span> verify training grant TR-8841 ... <span class="loading-line">OK</span></div>'
+          : '<div class="term"><span class="dim"># Session handshake will bind to the fictional device<br># MCR-REC-WS01 · user "Reception Support" · access: Standard User</span></div>'}
+        <div class="btn-row">
+          <button class="btn primary" ${S.connecting?"disabled":""} onclick="connectSession()">Connect to Simulated Session</button>
+        </div>
+      </div>
+    </div>`;
+  }
+  el.innerHTML = `
+  <div class="stage-eyebrow">Stage 2 of 4 · Remote support</div>
+  <div class="stage-title">Remote Support</div>
+  ${S.connected?'<div class="banner train">SIMULATED SESSION ACTIVE — MCR-REC-WS01 · all traffic is fictional</div>':""}
+  ${body}`;
+}
+function markComm(){
+  if(!S.viewComm){S.viewComm=true; log("Reviewed customer voicemail transcript","note");}
+  render();
+}
+function connectSession(){
+  if(S.connecting) return;
+  S.connecting=true; render();
+  setTimeout(()=>{
+    S.connecting=false; S.connected=true; S.sessionEnded=false;
+    S.sid = 4800 + Math.floor(Math.random()*900);
+    log("Connected to simulated session SIM-"+S.sid+" on MCR-REC-WS01","success");
+    render();
+  },1300);
+}
+function endSession(){
+  S.sessionEnded=true;
+  log("Ended simulated support session","info");
+  render();
+}
+function enterWorkstation(){
+  log("Entered workstation environment MCR-REC-WS01","info");
+  S.stage=2; S.tool="overview"; render();
+}
+/* =====================================================================
+   SCREEN 3 — CUSTOMER COMPUTER ENVIRONMENT
+   ===================================================================== */
+const TOOLS=["overview","ipconfig","ping","dns","voip","history"];
+const TOOL_LABEL={overview:"Network Overview",ipconfig:"IP Configuration",ping:"Connectivity Tests",dns:"DNS Lookup",voip:"VoIP Service Status",history:"Action History"};
+function renderWorkstation(){
+  const el=document.getElementById("screen");
+  const statusPill = S.fixed?pill("Network: Operational","green"):pill("Network: Degraded","amber");
+  el.innerHTML = `
+  <div class="stage-eyebrow">Stage 3 of 4 · Diagnosis workspace</div>
+  <div class="stage-title">Customer Computer Environment</div>
+
+  <div class="ws-top">
+    <span class="ws-name">MCR-REC-WS01</span>
+    ${pill("Reception Support","grey")}
+    ${pill(S.elevated?"Elevated (simulated)":"Standard User",S.elevated?"cyan":"grey")}
+    ${pill("Session: Connected","cyan")}
+    ${statusPill}
+    ${S.finding?pill("Finding logged: "+findingLabel(S.finding),"cyan"):""}
+  </div>
+
+  <div class="tool-tabs">
+    ${TOOLS.map(t=>'<button class="btn small '+(S.tool===t?"on":"")+'" onclick="selectTool(\''+t+'\')">'+TOOL_LABEL[t]+'</button>').join("")}
+  </div>
+  <div id="toolArea"></div>
+
+  <div class="btn-row" style="margin-top:16px">
+    <button class="btn" onclick="go(0,0)">← Return to Ticket</button>
+    <button class="btn primary" onclick="finishInvestigation()">Finish Investigation →</button>
+  </div>`;
+  renderTool();
+}
+function selectTool(t){
+  S.tool=t;
+  if(t!=="history") S.toolsRun.add(t);
+  if(t==="overview") log("Opened Network Overview","info");
+  if(t==="ipconfig") log("Opened IP Configuration","info");
+  if(t==="ping") log("Opened Connectivity Tests","info");
+  if(t==="dns") log("Opened DNS Lookup","info");
+  if(t==="voip") log("Opened VoIP Service Status","info");
+  renderWorkstation();
+}
+function renderTool(){
+  const a=document.getElementById("toolArea");
+  ({overview:vOverview,ipconfig:vIpconfig,ping:vPing,dns:vDns,voip:vVoip,history:vHistory}[S.tool])(a);
+}
+/* --- tool: network overview --- */
+function vOverview(a){
+  const bad=S.fixed===false;
+  a.innerHTML = `
+  <div class="panel">
+    <div class="panel-head">Adapter & service state</div>
+    <div class="panel-body">
+      <div class="stat-grid">
+        <div class="stat"><div class="k">Ethernet adapter</div><div class="v good">Intel I219-LM · 1.0 Gbps · Link up</div></div>
+        <div class="stat"><div class="k">IPv4 configuration</div><div class="v ${bad?"bad":"good"}">${bad?"Static — unexpected for this site network":"DHCP — 192.168.1.0/24 site network"}</div></div>
+        <div class="stat"><div class="k">Default gateway</div><div class="v ${bad?"err":"good"}">${bad?"Unreachable — no valid route":"192.168.1.1 · reachable"}</div></div>
+        <div class="stat"><div class="k">DNS</div><div class="v ${bad?"err":"good"}">${bad?"Unreachable — 10.0.0.5":"192.168.1.1 · responding"}</div></div>
+        <div class="stat"><div class="k">Reception IP phone</div><div class="v ${bad?"bad":"good"}">${bad?"Unreachable — 192.168.1.10":"Reachable · registered"}</div></div>
+        <div class="stat"><div class="k">Windows Firewall</div><div class="v">On · domain profile</div></div>
+      </div>
+      <div class="small muted" style="margin-top:12px">Observed: the adapter link is healthy, but the workstation holds an IPv4 configuration that does not belong to the site network. Further diagnostics are required to confirm impact.</div>
+    </div>
+  </div>`;
+}
+/* --- tool: ip configuration --- */
+function vIpconfig(a){
+  const bad=S.fixed===false;
+  const out = bad ?
+`<span class="p">C:\\Users\\Reception&gt;</span> ipconfig
+
+Windows IP Configuration
+
+
+Ethernet adapter Ethernet0:
+
+   Connection-specific DNS Suffix  . : localdomain
+   Link-local IPv6 Address . . . . . : fe80::3c2f:11a7:90d4:5e01%12
+   <span class="amb">IPv4 Address. . . . . . . . . . : 10.0.0.50</span>
+   Subnet Mask . . . . . . . . . . . . . : 255.255.255.0
+   <span class="amb">Default Gateway . . . . . . . . . : 10.0.0.1</span>` :
+`<span class="p">C:\\Users\\Reception&gt;</span> ipconfig
+
+Windows IP Configuration
+
+
+Ethernet adapter Ethernet0:
+
+   Connection-specific DNS Suffix  . : localdomain
+   Link-local IPv6 Address . . . . . . . : fe80::7a41:22b9:c108:9a03%12
+   <span class="ok">IPv4 Address. . . . . . . . . . . . . . : 192.168.1.105</span> <span class="dim">(Preferred)</span>
+   Subnet Mask . . . . . . . . . . . . . . : 255.255.255.0
+   <span class="ok">Default Gateway . . . . . . . . . : 192.168.1.1</span>
+   DHCP Enabled. . . . . . . . . . . . . : Yes
+   DHCP Server . . . . . . . . . . . . . : 192.168.1.1
+   DNS Servers . . . . . . . . . . . . : 192.168.1.1`;
+  a.innerHTML = `
+  <div class="panel">
+    <div class="panel-head">Command output</div>
+    <div class="panel-body">
+      <div class="term">${out}</div>
+      <div class="cmdbar">
+        <button class="btn small" onclick="runIpconfig()">ipconfig</button>
+        <button class="btn small" onclick="runIpconfigAll()">ipconfig /all</button>
+      </div>
+      ${bad? `
+      <hr class="sep">
+      <div class="small" style="margin-bottom:8px"><b>Corrective option:</b> restore DHCP-automatic configuration (matches the site network standard).</div>
+      <div class="cmdbar">
+        <button class="btn small" onclick="applyFix()">Apply DHCP Configuration</button>
+        ${S.elevated?"":'<button class="btn small" onclick="elevate()">Request Elevation (simulated authorization)</button>'}
+      </div>
+      ${S.fixAttempted&&!S.elevated&&!S.fixed?'<div class="banner errb">Access denied — administrator rights are required to change adapter settings. Request simulated elevation first.</div>':""}`
+      : '<div class="banner train">DHCP configuration applied. Re-run diagnostics to verify connectivity.</div>'}
+    </div>
+  </div>`;
+}
+function runIpconfig(){ log("Ran simulated command: ipconfig","note"); S.tool="ipconfig"; renderWorkstation(); }
+function runIpconfigAll(){
+  const bad=S.fixed===false;
+  log("Ran simulated command: ipconfig /all","note");
+  const a=document.getElementById("toolArea");
+  a.innerHTML = `
+  <div class="panel"><div class="panel-head">Command output</div><div class="panel-body">
+  <div class="term"><span class="p">C:\\Users\\Reception&gt;</span> ipconfig /all
+
+Ethernet adapter Ethernet0:
+
+   Description . . . . . . . . . . . . . : Intel(R) Ethernet Connection I219-LM
+   Physical Address. . . . . . . . . . . . : 8C-16-45-2F-9B-71
+   DHCP Enabled. . . . . . . . . . . . : ${bad?'<span class="amb">No</span>':'<span class="ok">Yes</span>'}
+   Autoconfiguration Enabled . . . . . : Yes
+   ${bad
+     ? 'IPv4 Address. . . . . . . . . . : <span class="amb">10.0.0.50</span>(Preferred)<br>   Subnet Mask . . . . . . . : 255.255.255.0<br>   Default Gateway . . . . . : <span class="amb">10.0.0.1</span><br>   DNS Servers . . . . . : <span class="amb">10.0.0.5</span><br>   NetBIOS over Tcpip. . . . . : Enabled<br><br><span class="amb">Note: manual/static addressing is in use. This does not match the<br>site standard (192.168.1.0/24, DHCP-assigned).</span>'
+     : 'IPv4 Address. . . . . . . . . . . : <span class="ok">192.168.1.105</span>(Preferred)<br>   Subnet Mask . . . . . . : 255.255.255.0<br>   Lease Obtained. . . . . . : 09:46:12<br>   Default Gateway . . . . : <span class="ok">192.168.1.1</span><br>   DHCP Server. . . . . . : 192.168.1.1<br>   DNS Servers . . . . : <span class="ok">192.168.1.1</span><br>   NetBIOS over Tcpip. . . . : Enabled'}
+  </div>
+  <div class="cmdbar"><button class="btn small" onclick="selectTool('ipconfig')">← Back to IP Configuration</button></div>
+  </div></div>`;
+}
+function elevate(){
+  if(S.elevated) return;
+  S.elevated=true;
+  log("Requested simulated elevation — training authorization TR-8841 granted by customer contact","success");
+  renderWorkstation();
+}
+function applyFix(){
+  if(S.fixed) return;
+  if(!S.elevated){
+    S.fixAttempted=true; S.denied++;
+    log("Attempted 'Apply DHCP Configuration' without elevation — blocked (administrator required)","error","perm");
+    renderWorkstation(); return;
+  }
+  log("Applied DHCP configuration to Ethernet0 (corrective action)","success");
+  S.fixed=true;
+  renderWorkstation();
+}
+/* --- tool: connectivity tests --- */
+function vPing(a){
+  a.innerHTML = `
+  <div class="panel">
+    <div class="panel-head">Predefined safe tests</div>
+    <div class="panel-body">
+      <div class="cmdbar">
+        <button class="btn small" onclick="runPing('gw')">ping 192.168.1.1</button>
+        <button class="btn small" onclick="runPing('wan')">ping 8.8.8.8</button>
+        <button class="btn small" onclick="runPing('phone')">ping 192.168.1.10</button>
+      </div>
+      <div class="small muted" style="margin-bottom:8px">Simulated ICMP echoes — no real network targets are contacted.</div>
+      <div id="pingOut">${S.pingOut||'<div class="empty">Select a test target to run a simulated ping.</div>'}</div>
+    </div>
+  </div>`;
+}
+function runPing(t){
+  S.toolsRun.add("ping");
+  const bad=S.fixed===false;
+  let label,out,key;
+  if(t==="gw"){ label="ping 192.168.1.1"; key="ping-gw";
+    out = bad
+? `<span class="p">C:\\Users\\Reception&gt;</span> ping 192.168.1.1
+
+Pinging 192.168.1.1 with 32 bytes of data:
+<span class="err">Destination host unreachable.</span>
+<span class="err">Destination host unreachable.</span>
+<span class="err">Destination host unreachable.</span>
+<span class="err">Destination host unreachable.</span>
+
+Ping statistics for 192.168.1.1:
+    Packets: Sent = 4, Received = 0, Lost = 4 <span class="err">(100% loss)</span>,
+<span class="dim">The default gateway is not reachable from this host.</span>`
+: `<span class="p">C:\\Users\\Reception&gt;</span> ping 192.168.1.1
+
+Pinging 192.168.1.1 with 32 bytes of data:
+<span class="ok">Reply from 192.168.1.1: bytes=32 time&lt;1ms TTL=64</span>
+<span class="ok">Reply from 192.168.1.1: bytes=32 time&lt;1ms TTL=64</span>
+<span class="ok">Reply from 192.168.1.1: bytes=32 time&lt;1ms TTL=64</span>
+<span class="ok">Reply from 192.168.1.1: bytes=32 time&lt;1ms TTL=64</span>
+
+Ping statistics for 192.168.1.1:
+    Packets: Sent = 4, Received = 4, Lost = 0 <span class="ok">(0% loss)</span>`;
+  } else if(t==="wan"){ label="ping 8.8.8.8"; key="ping-wan";
+    out = bad
+? `<span class="p">C:\\Users\\Reception&gt;</span> ping 8.8.8.8
+
+Pinging 8.8.8.8 with 32 bytes of data:
+<span class="err">General failure.</span> x4
+
+Ping statistics for 8.8.8.8:
+    Packets: Sent = 4, Received = 0, Lost = 4 <span class="err">(100% loss)</span>,
+<span class="dim">No outbound route. On its own this is ambiguous — it can look
+like a WAN/ISP issue, but the local gateway test is the deciding evidence.</span>`
+: `<span class="p">C:\\Users\\Reception&gt;</span> ping 8.8.8.8
+
+Pinging 8.8.8.8 with 32 bytes of data:
+<span class="ok">Reply from 8.8.8.8: bytes=32 time=18ms TTL=117</span>
+<span class="ok">Reply from 8.8.8.8: bytes=32 time=17ms TTL=117</span>
+<span class="ok">Reply from 8.8.8.8: bytes=32 time=19ms TTL=117</span>
+<span class="ok">Reply from 8.8.8.8: bytes=32 time=17ms TTL=117</span>
+
+Ping statistics for 8.8.8.8:
+    Packets: Sent = 4, Received = 4, Lost = 0 <span class="ok">(0% loss)</span>`;
+  } else { label="ping 192.168.1.10"; key="ping-phone";
+    out = bad
+? `<span class="p">C:\\Users\\Reception&gt;</span> ping 192.168.1.10
+
+Pinging 192.168.1.10 with 32 bytes of data:
+<span class="err">Destination host unreachable.</span> x4
+
+Ping statistics for 192.168.1.10:
+    Packets: Sent = 4, Received = 0, Lost = 4 <span class="err">(100% loss)</span>,
+<span class="dim">The IP phone (192.168.1.10) is unreachable from the current
+workstation subnet.</span>`
+: `<span class="p">C:\\Users\\Reception&gt;</span> ping 192.168.1.10
+
+Pinging 192.168.1.10 with 32 bytes of data:
+<span class="ok">Reply from 192.168.1.10: bytes=32 time&lt;1ms TTL=64</span> x4
+
+Ping statistics for 192.168.1.10:
+    Packets: Sent = 4, Received = 4, Lost = 0 <span class="ok">(0% loss)</span>`;
+  }
+  S.pingOut='<div class="term">'+out+'</div>';
+  log("Ran simulated command: "+label, bad?"info":"success", bad?"inconclusive":"helpful");
+  if(S.fixed) S.postFix.add(key);
+  vPing(document.getElementById("toolArea"));
+}
+/* --- tool: dns lookup --- */
+function vDns(a){
+  const bad=S.fixed===false;
+  a.innerHTML = `
+  <div class="panel">
+    <div class="panel-head">Predefined safe lookup</div>
+    <div class="panel-body">
+      <div class="cmdbar">
+        <button class="btn small" onclick="runDns('voice.example.test')">nslookup voice.example.test</button>
+        <button class="btn small" onclick="runDns('sip.northstar-voice.test')">nslookup sip.northstar-voice.test</button>
+      </div>
+      <div class="small muted" style="margin-bottom:8px">Simulated resolver queries — fictional names only.</div>
+      <div id="dnsOut">${S.dnsOut||'<div class="empty">Select a lookup to run a simulated nslookup.</div>'}</div>
+      <hr class="sep">
+      <div class="stat-grid" style="grid-template-columns:1fr 1fr">
+        <div class="stat"><div class="k">Configured DNS server</div><div class="v ${bad?"bad":"good"}">${bad?"10.0.0.5 (unreachable)":"192.168.1.1 (responding)"}</div></div>
+        <div class="stat"><div class="k">Last lookup result</div><div class="v ${bad?"err":"good"}">${bad?"Timed out":"Resolved OK"}</div></div>
+      </div>
+    </div>
+  </div>`;
+}
+function runDns(name){
+  S.toolsRun.add("dns");
+  const bad=S.fixed===false;
+  const out = bad
+? `<span class="p">C:\\Users\\Reception&gt;</span> nslookup ${name}
+Server:  UnKnown
+Address:  <span class="amb">10.0.0.5</span>
+
+<span class="err">DNS request timed out.</span>
+    timeout was 2 seconds.
+*** Request to UnKnown timed-out
+<span class="dim">The configured DNS server 10.0.0.5 does not answer. Note the
+server itself may be healthy — the workstation may simply have no route to it.</span>`
+: `<span class="p">C:\\Users\\Reception&gt;</span> nslookup ${name}
+Server:  gateway.local
+Address:  <span class="ok">192.168.1.1</span>
+
+Name:    ${name}
+Address: <span class="ok">192.168.1.20</span>`;
+  S.dnsOut='<div class="term">'+out+'</div>';
+  log("Ran simulated command: nslookup "+name, bad?"info":"success", bad?"inconclusive":"helpful");
+  if(S.fixed) S.postFix.add("dns");
+  vDns(document.getElementById("toolArea"));
+}
+/* --- tool: voip status --- */
+function vVoip(a){
+  const bad=S.fixed===false;
+  a.innerHTML = `
+  <div class="panel">
+    <div class="panel-head">SIP registration ${bad?pill("Failed","red"):pill("Registered","green")}</div>
+    <div class="panel-body">
+      <div class="stat-grid">
+        <div class="stat"><div class="k">Account</div><div class="v">204 @ northstar-voice.test</div></div>
+        <div class="stat"><div class="k">Registrar</div><div class="v">sip.northstar-voice.test</div></div>
+        <div class="stat"><div class="k">Registration</div><div class="v ${bad?"err":"good"}">${bad?"FAILED — no route to registrar":"REGISTERED · expires 3600s"}</div></div>
+        <div class="stat"><div class="k">Last error</div><div class="v ${bad?"bad":"good"}">${bad?"SIP timeout — network unreachable":"None · last register 200 OK"}</div></div>
+        <div class="stat"><div class="k">Codec</div><div class="v">G.711u</div></div>
+        <div class="stat"><div class="k">Phone link</div><div class="v ${bad?"bad":"good"}">${bad?"192.168.1.10 unreachable":"192.168.1.10 reachable"}</div></div>
+      </div>
+      <div class="cmdbar" style="margin-top:12px">
+        <button class="btn small" onclick="voipCheck()">Check registration</button>
+        <button class="btn small" onclick="softphoneRestart()">Restart softphone</button>
+      </div>
+      <div id="voipOut">${S.voipOut||""}</div>
+    </div>
+  </div>`;
+}
+function voipCheck(){
+  S.toolsRun.add("voip"); S.voipChecks++;
+  const bad=S.fixed===false;
+  S.voipOut='<div class="term">'+(bad
+? '<span class="p">trace&gt;</span> sip register --account 204<br><span class="err">REGISTER sip.northstar-voice.test SIP/2.0</span><br><span class="err">No route to host. Registration attempt failed.</span>'
+: '<span class="p">trace&gt;</span> sip register --account 204<br><span class="ok">REGISTER sip.northstar-voice.test SIP/2.0</span><br><span class="ok">SIP/2.0 200 OK — registered. Round trip 18 ms.</span>')+'</div>';
+  log("Checked SIP registration status", bad?"info":"success", bad?"inconclusive":"helpful");
+  if(S.fixed) S.postFix.add("voip");
+  vVoip(document.getElementById("toolArea"));
+}
+function softphoneRestart(){
+  S.softphoneRestarts++;
+  S.voipOut='<div class="term"><span class="p">trace&gt;</span> softphone restart<br>Client restarted. Attempting re-registration ...<br><span class="err">Registration still failing — network path unchanged.</span></div>';
+  log("Restarted softphone client (inconclusive — network fault unchanged)","warn","inconclusive");
+  vVoip(document.getElementById("toolArea"));
+}
+/* --- tool: action history + record finding --- */
+function findingLabel(f){
+  return {static:"Incorrect static IP configuration",dns:"DNS server failure",isp:"ISP / WAN outage",cable:"Physical cabling / NIC fault"}[f]||f;
+}
+function vHistory(a){
+  const items = S.actions.length? S.actions.slice().reverse().map(x=>
+    '<div class="hist-item"><span class="hist-t">'+x.t+'</span><span class="dot '+x.kind+'"></span><div>'+esc(x.label)+'</div></div>').join("")
+    : '<div class="empty">No actions recorded yet.</div>';
+  a.innerHTML = `
+  <div class="grid2">
+    <div class="panel">
+      <div class="panel-head">Record finding</div>
+      <div class="panel-body">
+        <div class="small muted" style="margin-bottom:8px">Document your working diagnosis based on the evidence you have collected. You can update it as you learn more.</div>
+        <select id="findingSel">
+          <option value="">Select suspected root cause…</option>
+          <option value="static" ${S.finding==="static"?"selected":""}>Incorrect static IP configuration (off-subnet)</option>
+          <option value="dns" ${S.finding==="dns"?"selected":""}>DNS server failure</option>
+          <option value="isp" ${S.finding==="isp"?"selected":""}>ISP / WAN outage</option>
+          <option value="cable" ${S.finding==="cable"?"selected":""}>Physical cabling / NIC fault</option>
+        </select>
+        <div class="cmdbar"><button class="btn small primary" style="background:var(--cyan);border-color:var(--cyan);color:#06231f" onclick="recordFinding()">Log finding</button></div>
+        ${S.finding?'<div class="small">Current finding: <b>'+findingLabel(S.finding)+'</b></div>':""}
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">Session action history</div>
+      <div class="panel-body" style="max-height:420px;overflow-y:auto">${items}</div>
+    </div>
+  </div>`;
+}
+function recordFinding(){
+  const v=document.getElementById("findingSel").value;
+  if(!v) return;
+  S.finding=v;
+  log("Logged finding: "+findingLabel(v), v==="static"?"note":"warn", v==="static"?"helpful":(v==="dns"||v==="isp"?"inconclusive":"incorrect"));
+  vHistory(document.getElementById("toolArea"));
+}
+function finishInvestigation(){
+  log("Finished investigation and submitted for review","info");
+  S.finished=true; S.stage=3; render();
+}
+/* =====================================================================
+   SCREEN 4 — EXERCISE REVIEW
+   ===================================================================== */
+function computeReview(){
+  const cats=[];
+  // 1 scope
+  const sc=(S.viewTicket?1:0)+(S.viewComm?1:0);
+  cats.push({name:"Scope & impact",pts:sc,expl:sc===2?"You reviewed the ticket and the customer communication before touching the environment — impact understood.":sc===1?"You reviewed part of the incident context. Always read both the ticket and the customer's own words before diagnosing.":"You did not review the incident context. Start every ticket by confirming business impact and reported symptoms."});
+  // 2 evidence
+  const ev=["ipconfig","ping","dns","voip"].filter(t=>S.toolsRun.has(t)).length;
+  cats.push({name:"Evidence collection",pts:ev>=3?2:ev===2?1:ev,expl:ev>=3?"You gathered evidence across configuration, connectivity, DNS, and the affected service.":ev>0?"Some evidence was collected, but key layers were skipped. A sound diagnosis triangulates config + connectivity + service state.":"Almost no diagnostic evidence was collected. Use the available tools to test each layer before concluding."});
+  // 3 reasoning
+  let rp=0,rex="";
+  if(S.finding==="static"){rp=2;rex="Your recorded finding matched the actual fault: an off-subnet static configuration. Well reasoned.";}
+  else if(S.finding==="dns"||S.finding==="isp"){rp=S.toolsRun.size>=3?1:0;rex=rp?"You recorded '"+findingLabel(S.finding)+"'. That was a reasonable hypothesis given partial evidence (DNS timeouts / WAN pings failing), but it was not supported once gateway and ipconfig evidence was in. Distinguish symptoms from causes by testing the default gateway first.":"You recorded '"+findingLabel(S.finding)+"' without enough supporting evidence. The DNS and WAN failures were downstream effects of the routing fault — test the default gateway and adapter configuration to separate cause from symptom.";}
+  else if(S.finding==="cable"){rp=0;rex="You suspected a physical fault, but the adapter showed a healthy 1.0 Gbps link with an IP configuration present — physical layers were working. Link-up plus wrong addressing points to configuration, not cabling.";}
+  else {rp=0;rex="No working diagnosis was recorded. Use 'Record finding' to commit to a hypothesis once evidence supports it — an undocumented guess is not a diagnosis.";}
+  cats.push({name:"Diagnostic reasoning",pts:rp,expl:rex});
+  // 4 permissions
+  const pp=S.denied===0?2:1;
+  cats.push({name:"Appropriate use of permissions",pts:pp,expl:S.denied===0?"You stayed within the Standard User boundary and used the simulated elevation step correctly.":S.denied+" administrative action(s) were attempted before elevation and correctly blocked by the permission boundary. In production, request authorization first — but the system stopped you, which is the desired behaviour."});
+  // 5 corrective
+  const cp=S.fixed?2:(S.fixAttempted?1:0);
+  cats.push({name:"Corrective action",pts:cp,expl:S.fixed?"The permitted corrective action (restore DHCP) was applied through the elevation step.":S.fixAttempted?"You attempted the correct fix but did not complete the elevation flow, so the fault remained.":"No corrective action was performed. The intended resolution was restoring DHCP via the authorized elevation step."});
+  // 6 verification
+  const vn=S.postFix.size;
+  const vp=vn>=2?2:vn;
+  cats.push({name:"Post-fix verification",pts:vp,expl:vn>=2?"You re-tested after the fix ("+vn+" checks) and confirmed the service recovered.":vn===1?"You ran one post-fix check. Verification should confirm every affected layer: gateway reachability, DNS resolution, and SIP registration.":"No post-fix verification was run. Always prove the fix: re-run gateway, DNS, and VoIP checks after any change."});
+  const score=Math.round(cats.reduce((s,c)=>s+c.pts,0)/12*100);
+  let result="Unresolved",tone="unresolved";
+  if(S.fixed){ if(vn>=2){result="Resolved";tone="resolved";} else {result="Incomplete";tone="incomplete";} }
+  return {cats,score,result,tone};
+}
+function renderReview(){
+  const el=document.getElementById("screen");
+  if(!S.finished && S.actions.length===0){
+    el.innerHTML='<div class="stage-eyebrow">Stage 4 of 4</div><div class="stage-title">Exercise Review</div><div class="panel"><div class="panel-body"><div class="empty">Finish the investigation to generate your review.</div></div></div>';
+    return;
+  }
+  const R=computeReview();
+  const barColor=p=>p===2?"var(--green)":p===1?"var(--amber)":"var(--red)";
+  const histItems=S.actions.map(x=>'<div class="hist-item"><span class="hist-t">'+x.t+'</span><span class="dot '+x.kind+'"></span><div>'+esc(x.label)+'</div></div>').join("")||'<div class="empty">No actions recorded.</div>';
+  const groups={helpful:[],inconclusive:[],perm:[],incorrect:[],unnecessary:[]};
+  S.actions.forEach(x=>{ if(groups[x.cls]) groups[x.cls].push(x.label); });
+  const grpRow=(title,tone,arr,note)=> arr.length?'<div style="margin-bottom:8px">'+pill(title+" · "+arr.length,tone)+' <span class="small muted">'+note+'</span></div>':"";
+  el.innerHTML = `
+  <div class="stage-eyebrow">Stage 4 of 4 · Assessment</div>
+  <div class="stage-title">Exercise Review</div>
+
+  <div class="result-hero ${R.tone}">
+    <div class="small muted" style="letter-spacing:.14em;text-transform:uppercase;font-family:var(--mono)">Exercise result</div>
+    <div class="big">${R.result}</div>
+    <div class="small muted" style="margin-top:4px">Overall score: <b style="color:var(--text)">${R.score}%</b> · based on reasoning, safe actions and verified resolution — not speed or click count.</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">Diagnosed issue</div>
+    <div class="panel-body small">
+      The workstation NIC on <b>MCR-REC-WS01</b> was manually configured with an off-subnet static address (<span style="font-family:var(--mono)">10.0.0.50/24, gateway 10.0.0.1, DNS 10.0.0.5</span>) on a site network of <span style="font-family:var(--mono)">192.168.1.0/24</span>. With no valid default route, all off-subnet traffic — including DNS and SIP registration — failed, which took the reception IP phone out of service. Restoring DHCP returned a valid <span style="font-family:var(--mono)">192.168.1.105</span> lease and full service.
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">Score breakdown</div>
+    <div class="panel-body">
+      ${R.cats.map(c=>`<div class="cat">
+        <div class="cat-row"><b>${c.name}</b><span class="pts">${c.pts} / 2</span></div>
+        <div class="bar"><i style="width:${c.pts/2*100}%;background:${barColor(c.pts)}"></i></div>
+        <div class="expl">${c.expl}</div>
+      </div>`).join("")}
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <div class="panel-head">Evidence & verification</div>
+      <div class="panel-body small">
+        <div><b>Evidence collected:</b> ${["ipconfig","ping","dns","voip"].filter(t=>S.toolsRun.has(t)).map(t=>({ipconfig:"IP configuration",ping:"Connectivity tests",dns:"DNS lookups",voip:"VoIP status checks"})[t]).join(", ")||"None"}</div>
+        <div style="margin-top:6px"><b>Corrective action:</b> ${S.fixed?"DHCP configuration applied via simulated elevation":"None performed"}</div>
+        <div style="margin-top:6px"><b>Verification after fix:</b> ${S.postFix.size? [...S.postFix].map(k=>({"ping-gw":"gateway ping OK","ping-wan":"WAN ping OK","ping-phone":"IP phone ping OK","dns":"DNS resolution OK","voip":"SIP registration OK"})[k]).join(", "):"No post-fix checks run"}</div>
+        <div style="margin-top:6px"><b>Recorded finding:</b> ${S.finding?findingLabel(S.finding):"None"}</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">Action classification</div>
+      <div class="panel-body small">
+        ${grpRow("Helpful","green",groups.helpful,"sound, permitted diagnostics and the verified fix")}
+        ${grpRow("Inconclusive","amber",groups.inconclusive,"safe, but could not confirm or rule out the fault on their own")}
+        ${grpRow("Blocked by permissions","grey",groups.perm,"attempted before authorization — correctly denied")}
+        ${grpRow("Incorrect","red",groups.incorrect,"wrong conclusions or out-of-scope actions")}
+        ${groups.helpful.length+groups.inconclusive.length+groups.perm.length+groups.incorrect.length===0?'<div class="empty">No actions to classify.</div>':""}
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">Timeline of learner actions</div>
+    <div class="panel-body" style="max-height:340px;overflow-y:auto">${histItems}</div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn primary" onclick="retryExercise()">Retry Exercise</button>
+    <button class="btn" onclick="backToWorkspace()">Back to Workspace</button>
+    <button class="btn" onclick="go(0,0)">Return to Ticket</button>
+  </div>`;
+}
+function backToWorkspace(){
+  if(S.connected){ S.stage=2; render(); } else { S.stage=1; render(); }
+}
+function retryExercise(){
+  S=freshState();
+  log("Exercise reset — new attempt started","info");
+  S.stage=0; render();
+}
+/* ---------- boot ---------- */
+render();
+</script>
+</body>
+</html>

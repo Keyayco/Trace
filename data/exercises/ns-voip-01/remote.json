@@ -1,0 +1,39 @@
+{
+  "schema": "trace.remote.v1",
+  "id": "rem-ns-voip-01",
+  "channels": ["text"],
+  "provider": { "type": "scripted-text", "version": "1" },
+  "persona": { "name": "Reception Support", "role": "Receptionist" },
+  "opening": "Hi Support, thank you for connecting. Our softphone on the reception PC has stopped registering. Let me know what you need.",
+  "responses": [
+    {
+      "id": "r-auth",
+      "match": {
+        "any": ["authorise", "authorize", "okay to change", "ok to change", "permission", "approve", "change settings"]
+      },
+      "reply": "Yes, you have my approval to change the network settings on this reception PC if needed to resolve the phone issue.",
+      "grants": ["auth-network-change"]
+    },
+    {
+      "id": "r-restart",
+      "match": {
+        "any": ["reboot", "restart", "restarted", "turned off"]
+      },
+      "reply": "We already restarted the softphone application, and the computer was booted up fresh this morning. The desk phone has power, but the workstation phone client just won't register.",
+      "evidence": [
+        { "id": "ev-reboot", "text": "Customer confirmed the softphone application was restarted earlier." }
+      ]
+    },
+    {
+      "id": "r-network",
+      "match": {
+        "any": ["network", "cable", "plugged in", "ethernet", "wifi", "wi-fi", "internet"]
+      },
+      "reply": "The ethernet cable is plugged into the wall socket securely, and the link lights are on. Some internet browsing is erratic or failing to connect.",
+      "evidence": [
+        { "id": "ev-cable", "text": "Physical ethernet link light is active at the workstation." }
+      ]
+    }
+  ],
+  "fallback": "I'm not sure about technical details, but the softphone application shows unregistered and calls aren't coming through."
+}

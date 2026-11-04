@@ -132,4 +132,28 @@ Order: **M0** freeze + browser-driven characterization → **M1** log + `reduce/
 
 ## 9. Not done (by constraint)
 
-No code changes; no UI changes; no canvas, terminal or new modules; no backend or dependency.
+No canvas or external dependencies; dark console design preserved.
+
+## 10. Phase 2 Implementation Record (2026-11-04)
+
+### 10.1 Work executed
+1. **Baseline frozen:** Byte-for-byte baseline copied to `legacy/trace-v0.1.html`; checksum recorded in `legacy/SHA256.txt`.
+2. **Contracts & Exercise Externalization:**
+   - Created `data/exercises/ns-voip-01/ticket.json` conforming to `trace.ticket.v1`
+   - Created `data/exercises/ns-voip-01/environment.json` conforming to `trace.environment.v1`
+   - Created `data/exercises/ns-voip-01/exercise.json` conforming to `trace.exercise.v1`
+   - Created `data/exercises/ns-voip-01/remote.json` conforming to `trace.remote.v1`
+3. **Core Modular Architecture:**
+   - `js/contracts.js`: Schema validators and cross-validation for all contracts.
+   - `js/session.js`: Append-only action log with pure projection `reduce`/`rebuild`, deterministic clock and ID generator, FNV-1a output digests.
+   - `js/modules/networking.js`: Registered networking module with topology node/link derivations, linkUp, reach, resolve, serviceState, diagnostic command runners (`overview`, `ipconfig`, `ping`, `nslookup`, `voip`), and `net.config.set` action.
+   - `js/environment.js`: Environment engine with 5-stage Access Gate (policy -> customer authorization `E_UNAUTHORIZED` -> technical privilege `E_PRIVILEGE` -> module validation `E_INVALID` -> apply changes).
+   - `js/remote.js`: Scripted-text customer remote assistance provider.
+   - `js/assess.js`: Pure assessment engine implementing rubric `legacy-1` check catalogue (`viewed`, `toolsTouched`, `finding`, `deniedActions`, `fixState`, `postFixProbes`, classification).
+   - `js/tickets.js`: Ticket desk view integrating Lovable presentation ideas with strict contract compliance and complete HTML escaping (D-12).
+   - `js/ui.js`: Interactive screens for Topbar, Nav, Remote Support, Customer Computer Environment (Workstation), and Exercise Review.
+   - `js/app.js`: Application coordinator loading manifest, cross-validating, freezing definitions, and orchestrating runtime flows.
+4. **Testing & Invariants:**
+   - `tests/unit/`: Contract validation, engine derivation, access gate denial/grant sequence, solvability check, and `rebuild(log) === reduce()` invariant check.
+   - `tests/characterize/`: Browser-driven characterization test runner, driver, targeted normalizer, and paths G1..G11.
+

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>TRACE — Characterization Test Runner</title>
+  <link rel="stylesheet" href="/css/trace.css" />
+  <style>
+    body { padding: 20px; }
+    .layout-split { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    iframe { width: 100%; height: 600px; border: 1px solid var(--border); border-radius: 8px; background: #080b10; }
+    .badge-pass { background: #133a28; color: var(--green); padding: 3px 8px; border-radius: 4px; font-family: var(--mono); font-weight: 700; font-size: 11px; }
+    .badge-run { background: #1a2f4c; color: var(--cyan); padding: 3px 8px; border-radius: 4px; font-family: var(--mono); font-weight: 700; font-size: 11px; }
+    .path-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  </style>
+</head>
+<body>
+  <div style="max-width: 1200px; margin: 0 auto;">
+    <h1 class="stage-title">TRACE — Baseline Characterization Test Runner</h1>
+    <div id="status-bar" class="term">Ready to characterize baseline (legacy/trace-v0.1.html).</div>
+
+    <div class="btn-row" style="margin: 14px 0;">
+      <button class="btn primary small" id="btn-run-all">Run All Paths (G1–G11)</button>
+      <a class="btn small" href="/">← Return to TRACE Simulator</a>
+    </div>
+
+    <div class="layout-split">
+      <div class="panel">
+        <div class="panel-head">Characterization Paths</div>
+        <div class="panel-body" style="padding: 0;">
+          <div id="paths-list"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">Active Test iFrame (Same-Origin)</div>
+        <div class="panel-body">
+          <iframe id="test-frame" src="/legacy/trace-v0.1.html"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { CharacterizationDriver } from "./driver.js";
+    import { paths } from "./paths.js";
+
+    const frame = document.getElementById("test-frame");
+    const driver = new CharacterizationDriver(frame);
+    const pathsList = document.getElementById("paths-list");
+    const statusBar = document.getElementById("status-bar");
+
+    const pathKeys = Object.keys(paths);
+    pathsList.innerHTML = pathKeys.map(k => `
+      <div class="path-row" id="row-${k}">
+        <span style="font-family:var(--mono);font-weight:700;">${k}</span>
+        <button class="btn small" data-path="${k}">Run</button>
+      </div>
+    `).join("");
+
+    async function runPath(k) {
+      const row = document.getElementById(`row-${k}`);
+      row.innerHTML = `<span style="font-family:var(--mono);font-weight:700;">${k}</span><span class="badge-run">RUNNING...</span>`;
+      statusBar.textContent = `Executing characterization path ${k}...`;
+      try {
+        const snap = await paths[k](driver);
+        row.innerHTML = `<span style="font-family:var(--mono);font-weight:700;">${k}</span><span class="badge-pass">PASS</span>`;
+        statusBar.textContent = `Path ${k} completed successfully. Snapshot captured (${snap.length} chars).`;
+      } catch (err) {
+        console.error(`Path ${k} failed:`, err);
+        row.innerHTML = `<span style="font-family:var(--mono);font-weight:700;">${k}</span><span class="badge" style="background:#331d1d;color:var(--red);">FAIL: ${err.message}</span>`;
+        statusBar.textContent = `Error in ${k}: ${err.message}`;
+      }
+    }
+
+    pathsList.querySelectorAll("button[data-path]").forEach(b => {
+      b.addEventListener("click", () => runPath(b.getAttribute("data-path")));
+    });
+
+    document.getElementById("btn-run-all").addEventListener("click", async () => {
+      for (const k of pathKeys) {
+        await runPath(k);
+        await new Promise(r => setTimeout(r, 400));
+      }
+      statusBar.textContent = "All characterization paths completed.";
+    });
+  </script>
+</body>
+</html>

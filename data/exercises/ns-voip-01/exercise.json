@@ -1,0 +1,80 @@
+{
+  "schema": "trace.exercise.v1",
+  "id": "ns-voip-01",
+  "title": "Reception softphone cannot register",
+  "ticket": { "schema": "trace.ticket.v1", "id": "INC-1042" },
+  "environment": { "schema": "trace.environment.v1", "id": "env-ns-voip-01" },
+  "remote": { "schema": "trace.remote.v1", "id": "rem-ns-voip-01" },
+  "authorization": { "mode": "simulated" },
+  "learner": { "privilege": "standard" },
+  "assessment": {
+    "rubricVersion": "legacy-1",
+    "maxPerCategory": 2,
+    "categories": [
+      {
+        "id": "scope",
+        "check": "viewed",
+        "params": { "items": ["ticket", "communication"] },
+        "perItem": 1
+      },
+      {
+        "id": "evidence",
+        "check": "toolsTouched",
+        "params": { "tools": ["ipconfig", "ping", "dns", "voip"] },
+        "thresholds": [
+          { "min": 3, "points": 2 },
+          { "min": 2, "points": 1 },
+          { "min": 1, "points": 1 }
+        ]
+      },
+      {
+        "id": "reasoning",
+        "check": "finding",
+        "params": {
+          "static-ip": 2,
+          "dns-failure": { "points": 1, "requiresToolsTouchedMin": 3 },
+          "isp-outage": { "points": 1, "requiresToolsTouchedMin": 3 },
+          "cabling-nic": 0,
+          "none": 0
+        }
+      },
+      {
+        "id": "permissions",
+        "check": "deniedActions",
+        "thresholds": [
+          { "eq": 0, "points": 2 },
+          { "else": true, "points": 1 }
+        ]
+      },
+      {
+        "id": "corrective",
+        "check": "fixState",
+        "params": { "applied": 2, "attemptedOnly": 1, "none": 0 }
+      },
+      {
+        "id": "verification",
+        "check": "postFixProbes",
+        "thresholds": [
+          { "min": 2, "points": 2 },
+          { "min": 1, "points": 1 }
+        ]
+      }
+    ],
+    "outcomeRules": [
+      { "outcome": "resolved", "when": { "fixApplied": true, "postFixProbesMin": 2 } },
+      { "outcome": "incomplete", "when": { "fixApplied": true } },
+      { "outcome": "unresolved", "when": "else" }
+    ],
+    "classification": {
+      "appliesTo": "learner-actions",
+      "rules": [
+        { "class": "blocked", "when": { "outcome": "denied" } },
+        { "class": "incorrect", "when": { "type": "finding.record", "hypothesis": "cabling-nic" } },
+        { "class": "inconclusive", "when": { "type": "finding.record", "hypothesisIn": ["dns-failure", "isp-outage"] } },
+        { "class": "inconclusive", "when": { "type": "tool.run", "healthy": false } },
+        { "class": "unnecessary", "when": { "type": "nav.blocked" } },
+        { "class": "helpful", "when": "else" }
+      ]
+    }
+  }
+}

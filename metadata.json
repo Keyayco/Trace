@@ -1,0 +1,6 @@
+{
+  "name": "TRACE — Technical Support Simulation Lab",
+  "description": "Interactive ticket-coordinated technical support training simulator with simulated workstation, environment engine, and session-log assessment.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

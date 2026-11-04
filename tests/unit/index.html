@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>TRACE — Unit & Contract Tests</title>
+  <link rel="stylesheet" href="/css/trace.css" />
+  <style>
+    body { padding: 20px; }
+    .test-list { list-style: none; margin-top: 14px; }
+    .test-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+    .badge-pass { background: #133a28; color: var(--green); padding: 3px 8px; border-radius: 4px; font-family: var(--mono); font-weight: 700; font-size: 11px; }
+    .badge-fail { background: #331d1d; color: var(--red); padding: 3px 8px; border-radius: 4px; font-family: var(--mono); font-weight: 700; font-size: 11px; }
+  </style>
+</head>
+<body>
+  <div style="max-width: 900px; margin: 0 auto;">
+    <h1 class="stage-title">TRACE — Unit &amp; Contract Invariant Tests</h1>
+    <div id="summary" class="term">Running test suite...</div>
+    <ul id="test-list" class="test-list"></ul>
+    <div style="margin-top: 20px;">
+      <a class="btn" href="/">← Return to Simulation</a>
+    </div>
+  </div>
+
+  <script type="module">
+    import { runUnitTests } from "./suite.js";
+    const listEl = document.getElementById("test-list");
+    const summaryEl = document.getElementById("summary");
+
+    runUnitTests().then(results => {
+      const passed = results.filter(r => r.passed).length;
+      const total = results.length;
+      summaryEl.textContent = `Completed ${total} tests: ${passed} PASSED, ${total - passed} FAILED.`;
+      summaryEl.style.color = passed === total ? "var(--green)" : "var(--red)";
+
+      listEl.innerHTML = results.map(r => `
+        <li class="test-item">
+          <span class="${r.passed ? 'badge-pass' : 'badge-fail'}">${r.passed ? 'PASS' : 'FAIL'}</span>
+          <span style="font-size:14px;font-weight:600;">${r.name}</span>
+          ${r.detail && !r.passed ? `<pre style="color:var(--red);font-size:11px;">${r.detail}</pre>` : ''}
+        </li>
+      `).join("");
+    });
+  </script>
+</body>
+</html>

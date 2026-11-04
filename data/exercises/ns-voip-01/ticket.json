@@ -1,0 +1,81 @@
+{
+  "schema": "trace.ticket.v1",
+  "id": "INC-1042",
+  "title": "Reception softphone cannot register",
+  "priority": { "level": "P2", "label": "High" },
+  "initialStatus": "open",
+  "created": { "date": "2026-10-19", "time": "09:12", "tz": null },
+  "customer": {
+    "name": "Northstar Business Services",
+    "site": "Manchester Office — Reception",
+    "contact": {
+      "person": "Reception Support",
+      "phone": "+44 161 949 0120",
+      "email": "reception@northstar-services.test"
+    }
+  },
+  "service": "Business VoIP",
+  "affected": {
+    "device": "Reception workstation (softphone, account 204)",
+    "user": "Reception Support"
+  },
+  "report": {
+    "text": "The reception softphone has stopped registering. The receptionist says the computer is also showing intermittent connectivity issues. Restarting the softphone did not resolve the problem.",
+    "sourceId": "src-ticket"
+  },
+  "impact": {
+    "text": "Incoming reception calls may be missed.",
+    "sourceId": "src-ticket"
+  },
+  "facts": [
+    { "id": "f1", "text": "The workstation is powered on.", "status": "reported", "sourceId": "src-ticket" },
+    { "id": "f2", "text": "The reception desk phone is powered on.", "status": "reported", "sourceId": "src-ticket" },
+    { "id": "f3", "text": "Restarting the softphone did not help.", "status": "reported", "sourceId": "src-ticket" }
+  ],
+  "unknowns": [
+    { "id": "u1", "text": "The underlying cause has not been confirmed.", "kind": "ambiguous" }
+  ],
+  "sources": [
+    {
+      "id": "src-ticket",
+      "type": "ticket-text",
+      "label": "Ticket INC-1042",
+      "origin": "authored",
+      "raw": "The reception softphone has stopped registering. The receptionist says the computer is also showing intermittent connectivity issues. Restarting the softphone did not resolve the problem.\nIncoming reception calls may be missed.\nThe workstation is powered on.\nThe reception desk phone is powered on.\nRestarting the softphone did not help."
+    },
+    {
+      "id": "src-voicemail",
+      "type": "voicemail-transcript",
+      "label": "Customer voicemail",
+      "origin": "authored",
+      "receivedAt": { "date": "2026-10-19", "time": "09:31", "tz": null },
+      "raw": "Hi Support, the reception softphone has stopped registering and the PC has been unreliable this morning. We have restarted the softphone, but the problem remains. Please investigate."
+    }
+  ],
+  "requirements": {
+    "remote": {
+      "mode": "optional",
+      "infoNeeds": []
+    },
+    "authorizations": [
+      {
+        "id": "auth-network-change",
+        "scope": "network-change",
+        "description": "Customer approval to change network settings on the reception workstation"
+      }
+    ],
+    "environment": {
+      "module": "networking",
+      "componentTypes": ["workstation", "router", "switch", "sip-registrar"],
+      "serviceTypes": ["dhcp", "dns", "sip-registration"],
+      "toolIds": ["overview", "ipconfig", "ping", "dns", "voip"]
+    }
+  },
+  "gaps": [
+    { "path": "created.tz", "reason": "source gives no timezone" }
+  ],
+  "meta": {
+    "origin": "authored",
+    "amendedFrom": "trace-v0.1 prototype"
+  }
+}

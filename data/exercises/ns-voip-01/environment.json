@@ -1,0 +1,211 @@
+{
+  "schema": "trace.environment.v1",
+  "id": "env-ns-voip-01",
+  "module": "networking",
+  "title": "Northstar Manchester — reception",
+  "nodes": [
+    {
+      "id": "ws01",
+      "type": "workstation",
+      "label": "MCR-REC-WS01",
+      "layout": { "x": 80, "y": 160 },
+      "interfaces": [
+        {
+          "id": "ws01.eth0",
+          "kind": "ethernet",
+          "mac": "8C-16-45-2F-9B-71",
+          "config": { "mode": "dhcp" }
+        }
+      ],
+      "software": [
+        {
+          "id": "softphone-204",
+          "type": "sip-client",
+          "config": {
+            "account": "204",
+            "registrar": "sip.northstar-voice.test"
+          }
+        }
+      ]
+    },
+    {
+      "id": "phone01",
+      "type": "ip-phone",
+      "label": "Reception desk phone",
+      "role": "reference-device",
+      "layout": { "x": 80, "y": 40 },
+      "interfaces": [
+        {
+          "id": "phone01.eth0",
+          "kind": "ethernet",
+          "config": {
+            "mode": "static",
+            "ip": "192.168.1.10",
+            "mask": "255.255.255.0",
+            "gateway": "192.168.1.1"
+          }
+        }
+      ]
+    },
+    {
+      "id": "gw01",
+      "type": "router",
+      "label": "gateway.local",
+      "layout": { "x": 400, "y": 160 },
+      "config": {
+        "uplink": { "reachable": ["8.8.8.8"] }
+      },
+      "interfaces": [
+        {
+          "id": "gw01.eth0",
+          "kind": "ethernet",
+          "config": {
+            "mode": "static",
+            "ip": "192.168.1.1",
+            "mask": "255.255.255.0"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sw01",
+      "type": "switch",
+      "label": "Office switch",
+      "layout": { "x": 240, "y": 100 },
+      "interfaces": [
+        { "id": "sw01.p1", "kind": "ethernet" },
+        { "id": "sw01.p2", "kind": "ethernet" },
+        { "id": "sw01.p3", "kind": "ethernet" },
+        { "id": "sw01.p4", "kind": "ethernet" }
+      ]
+    },
+    {
+      "id": "pbx01",
+      "type": "sip-registrar",
+      "label": "Voice platform",
+      "layout": { "x": 400, "y": 40 },
+      "interfaces": [
+        {
+          "id": "pbx01.eth0",
+          "kind": "ethernet",
+          "config": {
+            "mode": "static",
+            "ip": "192.168.1.20",
+            "mask": "255.255.255.0",
+            "gateway": "192.168.1.1"
+          }
+        }
+      ]
+    }
+  ],
+  "links": [
+    { "id": "l1", "a": "ws01.eth0", "b": "sw01.p1", "medium": "cat6", "status": "up" },
+    { "id": "l2", "a": "phone01.eth0", "b": "sw01.p2", "medium": "cat6", "status": "up" },
+    { "id": "l3", "a": "gw01.eth0", "b": "sw01.p3", "medium": "cat6", "status": "up" },
+    { "id": "l4", "a": "pbx01.eth0", "b": "sw01.p4", "medium": "cat6", "status": "up" }
+  ],
+  "services": [
+    {
+      "id": "dhcp-gw01",
+      "type": "dhcp",
+      "host": { "node": "gw01" },
+      "config": {
+        "subnet": "192.168.1.0/24",
+        "gateway": "192.168.1.1",
+        "dns": ["192.168.1.1"],
+        "reservations": { "ws01.eth0": "192.168.1.105" }
+      }
+    },
+    {
+      "id": "dns-gw01",
+      "type": "dns",
+      "host": { "node": "gw01" },
+      "config": {
+        "records": {
+          "voice.example.test": "192.168.1.20",
+          "sip.northstar-voice.test": "192.168.1.20"
+        }
+      }
+    },
+    {
+      "id": "sipsrv-pbx01",
+      "type": "sip-registrar",
+      "host": { "node": "pbx01" },
+      "config": { "domain": "northstar-voice.test" }
+    },
+    {
+      "id": "sipreg-204",
+      "type": "sip-registration",
+      "host": { "node": "ws01", "software": "softphone-204" },
+      "requires": [
+        { "check": "linkUp", "interface": "ws01.eth0" },
+        { "check": "resolve", "from": "ws01", "name": "sip.northstar-voice.test", "expectNode": "pbx01" },
+        { "check": "reach", "from": "ws01", "to": "pbx01" },
+        { "check": "serviceState", "service": "sipsrv-pbx01", "state": "up" }
+      ]
+    }
+  ],
+  "permissions": {
+    "levels": {
+      "standard": ["tool.run", "env.read"],
+      "admin": ["tool.run", "env.read", "config.write"]
+    },
+    "elevation": {
+      "method": "simulated",
+      "to": "admin"
+    },
+    "policies": {
+      "net.config.set": {
+        "privilege": "config.write",
+        "authorization": "network-change"
+      }
+    }
+  },
+  "tools": [
+    { "id": "overview", "on": "ws01", "commands": [] },
+    { "id": "ipconfig", "on": "ws01", "commands": ["ipconfig", "ipconfig-all"] },
+    { "id": "ping", "on": "ws01", "commands": ["ping"] },
+    { "id": "dns", "on": "ws01", "commands": ["nslookup"] },
+    { "id": "voip", "on": "ws01", "commands": ["sip-register-check", "sip-restart"] }
+  ],
+  "faults": [
+    {
+      "id": "fault-static-ip",
+      "activeAtStart": true,
+      "target": "ws01.eth0",
+      "set": {
+        "config": {
+          "mode": "static",
+          "ip": "10.0.0.50",
+          "mask": "255.255.255.0",
+          "gateway": "10.0.0.1",
+          "dns": ["10.0.0.5"]
+        }
+      }
+    }
+  ],
+  "outcomes": {
+    "hypotheses": [
+      { "id": "static-ip", "label": "Incorrect static IP configuration (off-subnet)" },
+      { "id": "dns-failure", "label": "DNS server failure" },
+      { "id": "isp-outage", "label": "ISP / WAN outage" },
+      { "id": "cabling-nic", "label": "Physical cabling / NIC fault" }
+    ],
+    "rootCause": {
+      "faultId": "fault-static-ip",
+      "hypothesisId": "static-ip"
+    },
+    "fixes": [
+      {
+        "action": "net.config.set",
+        "target": "ws01.eth0",
+        "set": { "config": { "mode": "dhcp" } }
+      }
+    ],
+    "verification": [
+      { "id": "v-gw", "check": "reach", "from": "ws01", "to": "gw01" },
+      { "id": "v-dns", "check": "resolve", "from": "ws01", "name": "voice.example.test", "expectNode": "pbx01" },
+      { "id": "v-sip", "check": "serviceState", "service": "sipreg-204", "state": "registered" }
+    ]
+  }
+}
